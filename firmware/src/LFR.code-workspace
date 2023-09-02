@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "../.."
+		},
+		{
+			"name": "firmware_rcc_car",
+			"path": "../../firmware_rcc_car"
+		}
+	],
+	"settings": {}
+}
