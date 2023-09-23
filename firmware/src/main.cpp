@@ -52,6 +52,7 @@ void setup() {
   digitalWrite(BUILTIN_LED, LOW);
   digitalWrite(buzzer, LOW);
 
+  //Wait for calibration On
   while(digitalRead(button) == HIGH) {
     delay(100);
     digitalWrite(BUILTIN_LED, HIGH);
@@ -63,12 +64,15 @@ void setup() {
 
   digitalWrite(BUILTIN_LED, HIGH);
   digitalWrite(buzzer, LOW);
+
   //10 seconds
   for (uint16_t i = 0; i < 400; i++)
   {
     qtr.calibrate();
   }
   digitalWrite(BUILTIN_LED, LOW);
+
+  //Wait for the start
   while(digitalRead(button) == HIGH){
     delay(100);
     digitalWrite(BUILTIN_LED, HIGH);
@@ -83,6 +87,7 @@ void setup() {
   delay(100);
   digitalWrite(EEP, HIGH);
   delay(1000);
+  // Starts approximately after 5 secs
 }
 
 void loop() {
