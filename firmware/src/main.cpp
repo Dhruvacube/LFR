@@ -1,12 +1,13 @@
 #include <Arduino.h>
 #include <QTRSensors.h>
+#include "nokiatune.h"
 
-int EEP = GPIO_NUM_19;
-int in1 = GPIO_NUM_5;
-int in2 = GPIO_NUM_17;
-int in3 = GPIO_NUM_16;
-int in4 = GPIO_NUM_4;
-int ULT = GPIO_NUM_18;
+#define EEP GPIO_NUM_19
+#define in1 GPIO_NUM_5
+#define in2 GPIO_NUM_17
+#define in3 GPIO_NUM_16
+#define in4 GPIO_NUM_4
+#define ULT GPIO_NUM_18
 
 int P;
 int I;
@@ -18,8 +19,8 @@ float Kd = 0.8;
 
 int lastError = 0;
 
-int button = GPIO_NUM_15;
-int buzzer = GPIO_NUM_21;
+#define button GPIO_NUM_15
+#define buzzer GPIO_NUM_21
 QTRSensors qtr;
 
 const uint8_t SensorCount = 8;
@@ -72,14 +73,13 @@ void setup() {
   }
   digitalWrite(BUILTIN_LED, LOW);
 
+  nokiatune(buzzer);
   //Wait for the start
   while(digitalRead(button) == HIGH){
     delay(100);
     digitalWrite(BUILTIN_LED, HIGH);
-    digitalWrite(buzzer, HIGH);
     delay(100);
     digitalWrite(BUILTIN_LED, LOW);
-    digitalWrite(buzzer, LOW);
   }
   digitalWrite(buzzer, HIGH);
   delay(100);
@@ -87,7 +87,7 @@ void setup() {
   delay(100);
   digitalWrite(EEP, HIGH);
   delay(1000);
-  // Starts approximately after 5 secs
+  // Starts approximately after 1 secs
 }
 
 void loop() {
