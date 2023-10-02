@@ -15,6 +15,9 @@ DRV8833 driver = DRV8833();
 
 #define button GPIO_NUM_15
 #define buzzer GPIO_NUM_21
+
+#define threshold 3500
+
 QTRSensors qtr;
 
 const uint8_t SensorCount = 8;
@@ -67,6 +70,18 @@ float Kd = 0.05;
 float Ki = 0 ;
 
 String str;
+
+void botleft ();
+void linefollow ();
+void checknode ();
+void reposition();
+void PID ();
+void botstop ();
+void botinchforward ();
+void ledBlink();
+void ledStop();
+void botright ();
+void botuturn ();
 
 void setup() {
   qtr.setTypeRC();
@@ -192,11 +207,14 @@ void loop() {
 
 }
 
+uint16_t returnPositionLine() {
+  return qtr.readLineWhite(sensorValues);;
+}
 
 void linefollow()
 { //green () ;
   paths = 0;
-  while ((analogRead(0) > threshold ) && (analogRead(4) > threshold ) && (analogRead(2) < threshold))
+  while ((returnPositionLine() < threshold ) && (returnPositionLine() > threshold ) && (returnPositionLine() < threshold+500 && returnPositionLine() > threshold-500))
   {
     PID();
   }
@@ -205,8 +223,7 @@ void linefollow()
 
 void PID()
 {
-  uint16_t positionLine = qtr.readLineWhite(sensorValues);
-  int error = 3500 - positionLine;
+  int error = threshold - returnPositionLine();
 
   P = error;
   I = I + error;
@@ -248,12 +265,12 @@ void checknode ()
   // checks whethere bot is on node and the number of exits possible
 
 
-  if (analogRead(4) < threshold) r = 1;
-  if (analogRead(0) < threshold) l = 1;
-  if ((analogRead(0) > threshold && (analogRead(4) > threshold) && (analogRead(2) > threshold))) {
+  if (returnPositionLine() < threshold) r = 1;
+  if (returnPositionLine() > threshold) l = 1;
+  if ((returnPositionLine() < threshold && (returnPositionLine() > threshold))) { // && (analogRead(2) > threshold)
     u = 1;
   }
-  if ((analogRead(2) < threshold) && (analogRead(3) < threshold) && (analogRead(4) < threshold)) {
+  if (returnPositionLine() < threshold) {
     e = 1;
   }
 
@@ -263,16 +280,16 @@ void checknode ()
     {
       //botinchforward ();
       PID();
-      if (analogRead (4) < threshold) r = 1;
-      if (analogRead (0) < threshold) l = 1;
+      if (returnPositionLine() < threshold) r = 1;
+      if (returnPositionLine() > threshold) l = 1;
     }
 
     for (int i = 0; i < FT; i++)
     { ledBlink();
       //botinchforward ();
       PID();
-      if (analogRead (2) < threshold) s = 1;
-      if ((e == 1) && (analogRead(3) < threshold) && (analogRead(4) < threshold) && (analogRead(2) < threshold)) e = 2;
+      if (returnPositionLine() < threshold+500 && returnPositionLine() > threshold-500) s = 1;
+      if ((e == 1) && returnPositionLine() < threshold) e = 2;
     }
   }
   if (u == 1)
@@ -331,7 +348,7 @@ void botleft ()
   driver.motorAReverse(lfspeed);
   driver.motorBForward(lfspeed);
   delay(200);
-  while (analogRead(2) > threshold)
+  while (returnPositionLine() > threshold+500 || returnPositionLine() < threshold-500)
   {
     driver.motorAReverse(lfspeed);
     driver.motorBForward(lfspeed);
@@ -346,7 +363,7 @@ void botright ()
   driver.motorAForward(lfspeed);
   driver.motorBReverse(lfspeed);
   delay(200);
-  while (analogRead(2) > threshold)
+  while (returnPositionLine() > threshold+500 || returnPositionLine() < threshold-500)
   {
     driver.motorAForward(lfspeed);
     driver.motorBReverse(lfspeed);
@@ -378,7 +395,7 @@ void botuturn ()
   driver.motorAReverse(lfspeed);
   driver.motorBForward(lfspeed * 0.8);
   delay(400);
-  while (analogRead(2) > threshold)
+  while (returnPositionLine() > threshold+500 || returnPositionLine() < threshold-500)
   {
     driver.motorAReverse(lfspeed);
     driver.motorBForward(lfspeed * 0.8);
