@@ -2,14 +2,31 @@
 #include <QTRSensors.h>
 #include "nokiatune.h"
 #include <DRV8833.h>
+#include "BluetoothSerial.h"
 
 DRV8833 driver = DRV8833();
 
+#define USE_PIN
+const char *pin = "7842";
+
+String device_name = "HOKAGE_Meshmerize";
+
+#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
+#error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
+#endif
+
+#if !defined(CONFIG_BT_SPP_ENABLED)
+#error Serial Bluetooth not available or not enabled. It is only available for the ESP32 chip.
+#endif
+
+BluetoothSerial SerialBT;
+
+
 #define EEP GPIO_NUM_19
-#define in1 GPIO_NUM_5
-#define in2 GPIO_NUM_17
-#define in3 GPIO_NUM_16
+#define in2 GPIO_NUM_5
+#define in1 GPIO_NUM_17
 #define in4 GPIO_NUM_4
+#define in3 GPIO_NUM_16
 #define ULT GPIO_NUM_18
 
 
@@ -67,7 +84,7 @@ int lfspeed = 80;
 int turnspeed;
 float Kp = 0.04;
 float Kd = 0.05;
-float Ki = 0 ;
+float Ki = 0;
 
 String str;
 
@@ -84,6 +101,7 @@ void botright ();
 void botuturn ();
 
 void setup() {
+  SerialBT.begin(device_name);
   qtr.setTypeRC();
   qtr.setSensorPins(sensors, SensorCount);
 
@@ -120,10 +138,15 @@ void setup() {
   nokiatune(buzzer);
   //  lfspeed = 50000 / analogRead(7); //arbitrary conversion to convert analogRead to speed. Need to check if this works for all voltage levels
   turnspeed = lfspeed * 0.6;
+  digitalWrite(EEP, HIGH);
 }
 
 void loop() {
-  digitalWrite(EEP, HIGH);
+  digitalWrite(BUILTIN_LED, HIGH);
+    digitalWrite(buzzer, HIGH);
+    delay(100);
+    digitalWrite(BUILTIN_LED, LOW);
+    digitalWrite(buzzer, LOW);
   while (digitalRead(button) == HIGH)
   { //Do nothing while waiting for button press
     delay(100);
@@ -132,7 +155,7 @@ void loop() {
     digitalWrite(BUILTIN_LED, LOW);
   }
   delay(1000);
-
+  int n= 0;
   while (endFound == 0)
   {
     linefollow();
@@ -142,8 +165,10 @@ void loop() {
     delay(100);
 
     reposition ();
+    n+=1;
+    SerialBT.println(n);
   }
-
+  SerialBT.println("Inside forloop");
   for (int x = 0; x < 4; x++)
   {
     str.replace("LULUS", "U");
@@ -152,6 +177,7 @@ void loop() {
     str.replace("SUL", "R");
     str.replace("LUS", "R");
     str.replace("RUL", "U");
+    SerialBT.println(str);
   }
   int endpos = str.indexOf('E');
 
@@ -161,11 +187,13 @@ void loop() {
     digitalWrite(BUILTIN_LED, HIGH);
     delay(100);
     digitalWrite(BUILTIN_LED, LOW);
+    SerialBT.println("Waiting for button press");
   }
   delay(1000);
 
   for (int i = 0; i <= endpos; i++)
   {
+    SerialBT.println("Inside forloop");
     char node = str.charAt(i);
     paths = 0;
     while (paths < 2)
@@ -217,6 +245,7 @@ void linefollow()
   while ((returnPositionLine() < threshold ) && (returnPositionLine() > threshold ) && (returnPositionLine() < threshold+500 && returnPositionLine() > threshold-500))
   {
     PID();
+    delay(50);
   }
 }
 
@@ -247,9 +276,13 @@ void PID()
   if (rsp < 0) {
     rsp = 0;
   }
-
+  SerialBT.println("PID");
+  SerialBT.println(returnPositionLine());
+  SerialBT.println(lsp);
+  SerialBT.println(rsp);
   driver.motorAForward(lsp);
   driver.motorBForward(rsp);
+  delay(200);
 }
 
 
@@ -301,7 +334,7 @@ void checknode ()
   }
 
   paths = l + s + r;
-
+  SerialBT.println("Paths"+paths);
 }
 
 
@@ -345,11 +378,13 @@ void reposition()
 
 void botleft ()
 {
+  SerialBT.println("Left");
   driver.motorAReverse(lfspeed);
   driver.motorBForward(lfspeed);
   delay(200);
   while (returnPositionLine() > threshold+500 || returnPositionLine() < threshold-500)
   {
+    SerialBT.println("While Left");
     driver.motorAReverse(lfspeed);
     driver.motorBForward(lfspeed);
   }
@@ -360,11 +395,13 @@ void botleft ()
 
 void botright ()
 {
+  SerialBT.println("Right");
   driver.motorAForward(lfspeed);
   driver.motorBReverse(lfspeed);
   delay(200);
   while (returnPositionLine() > threshold+500 || returnPositionLine() < threshold-500)
   {
+    SerialBT.println("While Right");
     driver.motorAForward(lfspeed);
     driver.motorBReverse(lfspeed);
   }
@@ -375,28 +412,33 @@ void botright ()
 
 void botstraight ()
 {
+  SerialBT.println("Straight");
   driver.motorAForward(lfspeed);
   driver.motorBForward(lfspeed);
 }
 
 void botinchforward ()
 {
+  SerialBT.println("Inch Forward");
   driver.motorAForward(turnspeed);
   driver.motorBForward(turnspeed);
   delay(10);
 }
 void botstop ()
 {
+  SerialBT.println("Stop");
   driver.motorAStop();
   driver.motorBStop();
 }
 void botuturn ()
 {
+  SerialBT.println("Uturn");
   driver.motorAReverse(lfspeed);
   driver.motorBForward(lfspeed * 0.8);
   delay(400);
   while (returnPositionLine() > threshold+500 || returnPositionLine() < threshold-500)
   {
+    SerialBT.println("While Uturn");
     driver.motorAReverse(lfspeed);
     driver.motorBForward(lfspeed * 0.8);
   }

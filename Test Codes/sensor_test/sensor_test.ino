@@ -14,6 +14,8 @@ String device_name = "HOKAGE_Meshmerize";
 #error Serial Bluetooth not available or not enabled. It is only available for the ESP32 chip.
 #endif
 
+#define button GPIO_NUM_15
+
 BluetoothSerial SerialBT;
 QTRSensors qtr;
 
@@ -25,14 +27,30 @@ void setup() {
   // put your setup code here, to run once:
   SerialBT.begin(device_name); //Bluetooth device name
   pinMode(BUILTIN_LED, OUTPUT);
+  pinMode(button, INPUT_PULLUP);
   
   qtr.setTypeRC();
   qtr.setSensorPins(sensors, SensorCount);
-  
+
+  while(digitalRead(button) == HIGH) {
+    delay(100);
+    digitalWrite(BUILTIN_LED, HIGH);
+    delay(100);
+    digitalWrite(BUILTIN_LED, LOW);
+  }
+  digitalWrite(BUILTIN_LED, LOW);
   for (uint16_t i = 0; i < 400; i++)
   {
     qtr.calibrate();
   }
+
+  while(digitalRead(button) == HIGH) {
+    delay(100);
+    digitalWrite(BUILTIN_LED, HIGH);
+    delay(100);
+    digitalWrite(BUILTIN_LED, LOW);
+  }
+  digitalWrite(BUILTIN_LED, LOW);
 }
 
 void loop() {
